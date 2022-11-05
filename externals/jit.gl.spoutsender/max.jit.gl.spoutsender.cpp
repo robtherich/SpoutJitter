@@ -21,6 +21,8 @@
 	21.06.16 - Recompiled /MT Spout 2.005 - 64bit and 32bit VS2012 - Version 2.0.5.10
 	15.01.17 - Update to Spout 2.006
 			   Vers 2.006.0
+	27.05.22 - Rebuild for Spout 2.007 VS2019 /MT - Vers 2.007h
+	27.05.22 - Added frame metadata support
 
 	----------------------------------------------------
 		
@@ -91,9 +93,9 @@ int C74_EXPORT main(void)
 	t_class *maxclass, *jitclass;
 
 	#ifdef ENV64BIT
-	post("jit_gl_spout_sender - Vers 2.0.6.0 (64 bit)");
+	post("jit.gl.spoutsender - Vers 2.007h (64 bit)");
 	#else
-	post("jit_gl_spout_sender - Vers 2.0.6.0 (32 bit)");
+	post("jit.gl.spoutsender - Vers 2.007h (32 bit)");
 	#endif
 
 

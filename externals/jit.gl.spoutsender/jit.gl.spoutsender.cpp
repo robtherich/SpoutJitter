@@ -60,6 +60,8 @@
 	20.06.16 - Recompiled /MT Spout 2.005 - 64bit and 32bit VS2012 - Version 2.0.5.10
 	23.06.16 - change back to 2.004 logic for access locks for texture read/write
 	26.01.17 - Rebuild for Spout 2.006 VS2012 /MT - Vers 2.006.0
+	27.05.22 - Rebuild for Spout 2.007 VS2019 /MT - Vers 2.007h
+	27.05.22 - Added frame metadata support
 
 	- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 		Copyright (c) 2016-2017, Lynn Jarvis. All rights reserved.
@@ -92,9 +94,10 @@
 #include "jit.gl.ob3d.h"
 #include "ext_obex.h"
 #include "ext_preferences.h"
-#include "string"
+#include <string.h>
+#include <algorithm>
 
-#include "Spout.h"
+#include "SpoutSender.h"
 
 typedef struct _jit_gl_spoutsender
 {
@@ -127,6 +130,11 @@ typedef struct _jit_gl_spoutsender
 	char g_SenderName[256]; // sender name - link with sendername
 	t_symbol *textype;
 
+	t_symbol* frame_metadata;	// Used for input of the frame metadata
+
+	int frame_metadata_size;	// frame metadata size
+	char *g_frameMetadata; // frame metadata
+
 	bool bDestClosing;
 	bool bDestChanged;
 	bool bIsGL3;
@@ -158,12 +166,18 @@ t_jit_err jit_gl_spoutsender_jit_gl_texture(t_jit_gl_spoutsender *x, t_symbol *s
 // handle input matrix
 t_jit_err jit_gl_spoutsender_jit_matrix(t_jit_gl_spoutsender *x, t_symbol *s, int argc, t_atom *argv);
 
+// frame_metadata, to set the frame metadata
+t_jit_err jit_gl_spoutsender_frame_metadata(t_jit_gl_spoutsender* x, t_symbol* s, long argc, t_atom* argv);
+
 //attributes
 // @sendername, for sender name
 t_jit_err jit_gl_spoutsender_sendername(t_jit_gl_spoutsender *x, void *attr, long argc, t_atom *argv);
 
 // @invert, to flip the image
 t_jit_err jit_gl_spoutsender_invert(t_jit_gl_spoutsender *x, void *attr, long argc, t_atom *argv);
+
+// @frame_metadata_size, to set the size of the frame metadata 
+t_jit_err jit_gl_spoutsender_frame_metadatasize(t_jit_gl_spoutsender* x, void* attr, long argc, t_atom* argv);
 
 // Utility
 void SaveOpenGLstate(t_jit_gl_spoutsender *x, GLint &previousFBO, GLint &previousMatrixMode,  GLint &previousActiveTexture, float *vpdim);
@@ -179,6 +193,9 @@ t_symbol *ps_gltarget;
 t_symbol *ps_flip;
 t_symbol *ps_drawto;
 t_symbol *ps_jit_gl_texture; // our internal texture for matrix input
+
+t_symbol* ps_frame_metadata_size;
+t_symbol* ps_frame_metadata;
 
 //
 // Function implementations
@@ -229,15 +246,21 @@ t_jit_err jit_gl_spoutsender_init(void)
 	
 	// sender name
 	attr = (t_jit_object *)jit_object_new(_jit_sym_jit_attr_offset,"sendername",_jit_sym_symbol,attrflags,
-						  (method)0L, jit_gl_spoutsender_sendername, calcoffset(t_jit_gl_spoutsender, sendername));	
+					(method)0L, jit_gl_spoutsender_sendername, calcoffset(t_jit_gl_spoutsender, sendername));	
 	jit_class_addattr(_jit_gl_spoutsender_class,attr);
 	
 	// invert
 	attr = (t_jit_object *)jit_object_new(_jit_sym_jit_attr_offset,"invert",_jit_sym_long,attrflags,
-						  (method)0L, jit_gl_spoutsender_invert, calcoffset(t_jit_gl_spoutsender, invert));	
+					(method)0L, jit_gl_spoutsender_invert, calcoffset(t_jit_gl_spoutsender, invert));	
 	jit_class_addattr(_jit_gl_spoutsender_class,attr);
 	object_addattr_parse(attr, "style", _jit_sym_symbol, 0, "onoff");
-	
+
+	// metadata size
+	attr = (t_jit_object*)jit_object_new(_jit_sym_jit_attr_offset, "frame_metadata_size", _jit_sym_long, attrflags,
+		(method)0L, jit_gl_spoutsender_frame_metadatasize, calcoffset(t_jit_gl_spoutsender, frame_metadata_size));
+	jit_class_addattr(_jit_gl_spoutsender_class, attr);
+
+
 	// define our OB3D draw method.  called in automatic mode by 
 	jit_class_addmethod(_jit_gl_spoutsender_class, (method)jit_gl_spoutsender_draw, "ob3d_draw", A_CANT, 0L);
 
@@ -255,6 +278,9 @@ t_jit_err jit_gl_spoutsender_init(void)
 	// handle matrix inputs
 	jit_class_addmethod(_jit_gl_spoutsender_class, (method)jit_gl_spoutsender_jit_matrix, "jit_matrix", A_USURP_LOW, 0);	
 	
+	// allocate metadata size
+	jit_class_addmethod(_jit_gl_spoutsender_class, (method)jit_gl_spoutsender_frame_metadata, "frame_metadata", A_GIMME, 0);
+
 	//symbols
 	ps_sendername = gensym("sendername");
 	ps_texture = gensym("texture");
@@ -265,6 +291,9 @@ t_jit_err jit_gl_spoutsender_init(void)
 	ps_flip = gensym("flip"); // Not used
 	ps_jit_gl_texture = gensym("jit_gl_texture");
 	ps_drawto = gensym("drawto");
+
+	ps_frame_metadata_size = gensym("frame_metadata_size");
+	ps_frame_metadata = gensym("frame_metadata");
 
 	jit_class_register(_jit_gl_spoutsender_class);
 	return JIT_ERR_NONE;
@@ -290,6 +319,9 @@ t_jit_gl_spoutsender *jit_gl_spoutsender_new(t_symbol *dest_name)
 		x->textype		 = _jit_sym_char;
 		x->mySender      = NULL;
 		x->invert        = 1; // invert texture when sending - default true
+
+		x->frame_metadata_size = 0;
+
 
 		x->bDestChanged  = false;
 		x->bDestClosing  = false;
@@ -341,7 +373,7 @@ void jit_gl_spoutsender_free(t_jit_gl_spoutsender *x)
 	if(x->bInitialized)	x->mySender->ReleaseSender();
 
 	// Delete the sender object last.
-	if(x->mySender) delete x->mySender;
+	if(x->mySender)delete x->mySender;
 	x->mySender = NULL;
 
 }
@@ -420,7 +452,33 @@ t_jit_err jit_gl_spoutsender_jit_gl_texture(t_jit_gl_spoutsender *x, t_symbol *s
 	return JIT_ERR_NONE;
 }
 
+// handle frame meta data input 
+// This happens all the time. Changes are handled in draw
+t_jit_err jit_gl_spoutsender_frame_metadata(t_jit_gl_spoutsender* x, t_symbol* s, long argc, t_atom* argv)
+{
+	t_symbol* name;
 
+	// Use this for user input of sharing name
+	if (x && x->frame_metadata_size > 0) {
+		if (argc && argv) {
+			name = jit_atom_getsym(argv);
+			x->frame_metadata = name;
+		}
+		else {
+			// no args, set to zero
+			x->frame_metadata = gensym("empty");
+			strcpy_s(x->g_frameMetadata, 6, "empty");
+		}
+		// set the name for this sender
+		//strncpy_s(x->g_frameMetadata, x->frame_metadata_size, x->frame_metadata->s_name, strlen(x->frame_metadata->s_name) + 1);
+		int contentSize = min(x->frame_metadata_size - 1, strlen(x->frame_metadata->s_name));
+
+		strncpy(x->g_frameMetadata, x->frame_metadata->s_name, contentSize);
+		x->g_frameMetadata[contentSize] = 0x00;
+	}
+
+	return JIT_ERR_NONE;
+}
 
 t_jit_err jit_gl_spoutsender_draw(t_jit_gl_spoutsender *x)
 {
@@ -480,7 +538,7 @@ t_jit_err jit_gl_spoutsender_draw(t_jit_gl_spoutsender *x)
 					format = DXGI_FORMAT_R32G32B32A32_FLOAT;
 				}
 				else {
-					x->mySender->SetDX9compatible(true);
+					x->mySender->SetDX9(true);
 				}
 					
 				if(x->mySender->CreateSender(x->g_SenderName, texWidth, texHeight, format)) {
@@ -505,7 +563,12 @@ t_jit_err jit_gl_spoutsender_draw(t_jit_gl_spoutsender *x)
 			// --- otherwise it is initialized OK so send the frame out ---
 			else {
 				// No actual rendering is done here, this is just sending out a texture
-				if(x->bInitialized)	x->mySender->SendTexture(texId, texTarget, texWidth, texHeight, bInvert);
+				if (x->bInitialized) {
+					x->mySender->SendTexture(texId, texTarget, texWidth, texHeight, bInvert);
+					if (x->frame_metadata_size > 0) {
+						x->mySender->WriteMemoryBuffer(x->g_SenderName, x->g_frameMetadata, x->frame_metadata_size);
+					}
+				}
 			} // end if size was OK and normal draw
 
 			// Restore everything
@@ -614,6 +677,25 @@ t_jit_err jit_gl_spoutsender_invert(t_jit_gl_spoutsender *x, void *attr, long ar
 {
 	long c = (long)jit_atom_getlong(argv);
 	x->invert = c;
+
+	return JIT_ERR_NONE;
+}
+
+
+// @frame_metadata
+t_jit_err jit_gl_spoutsender_frame_metadatasize(t_jit_gl_spoutsender* x, void* attr, long argc, t_atom* argv)
+{
+	long c = (long)jit_atom_getlong(argv);
+	x->frame_metadata_size = c;
+
+	x->g_frameMetadata = new char[x->frame_metadata_size];
+
+	if (x->mySender) {
+		if (x->frame_metadata_size > 0)
+			x->mySender->CreateMemoryBuffer(x->g_SenderName, x->frame_metadata_size);
+		else
+			x->mySender->DeleteMemoryBuffer();
+	}
 
 	return JIT_ERR_NONE;
 }

@@ -65,6 +65,8 @@
 	21.06.16 - Recompiled /MT Spout 2.005 - 64bit and 32bit VS2012 - Version 2.0.5.10
 	23.06.16 - change back to 2.004 logic for access locks for texture read/write
 	26.01.17 - Rebuild for Spout 2.006 VS2012 /MT - Vers 2.006.0
+	27.05.22 - Rebuild for Spout 2.007 VS2019 /MT - Vers 2.007h
+	27.05.22 - Added frame metadata support
 
 			 - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 		Copyright (c) 2016-2017, Lynn Jarvis. All rights reserved.
@@ -98,7 +100,8 @@
 #include "jit.gl.draw.h"
 #include "ext_obex.h"
 #include "ext_preferences.h"
-#include "string"
+#include <string>
+#include "SpoutReceiver.h"
 #include "Spout.h"
 
 
@@ -112,6 +115,9 @@ typedef struct _jit_gl_spout_receiver
 	// 3d object extension.  This is what all objects in the GL group have in common.
 	void *ob3d;
 		
+	// reference to the max object
+	void* maxob = NULL;
+
 	// attributes
 	t_symbol *sendername; // Use for sharing name
 	t_symbol *texturename;	
@@ -126,6 +132,11 @@ typedef struct _jit_gl_spout_receiver
 	unsigned int g_Width, g_Height;
 	char         g_SenderName[256];
 	GLuint       g_GLtexture; // local utility texture
+
+	t_symbol* frame_metadata;	// Used for input of the frame metadata
+
+	int frame_metadata_size;	// frame metadata size
+	char *g_frameMetadata;		// frame metadata
 
 	bool         bInitialized;
 	bool         bDestClosing;
@@ -178,6 +189,10 @@ t_jit_err jit_gl_spout_receiver_getattr_out_name(t_jit_gl_spout_receiver *x, voi
 // @dim - dimension input
 t_jit_err jit_gl_spout_receiver_setattr_dim(t_jit_gl_spout_receiver *x, void *attr, long argc, t_atom *argv);
 
+// @frame_metadata_size, to set the size of the frame metadata 
+t_jit_err jit_gl_spout_receiver_frame_metadatasize(t_jit_gl_spout_receiver* x, void* attr, long argc, t_atom* argv);
+
+
 // Utility
 void SaveOpenGLstate(t_jit_gl_spout_receiver *x,  GLuint width, GLuint height, GLint &previousFBO, GLint &previousMatrixMode,  GLint &previousActiveTexture, float *vpdim);
 void RestoreOpenGLstate(t_jit_gl_spout_receiver *x, GLint previousFBO, GLint previousMatrixMode,  GLint previousActiveTexture, float *vpdim);
@@ -193,6 +208,9 @@ t_symbol *ps_automatic;
 t_symbol *ps_flip;
 t_symbol *ps_drawto;
 t_symbol *ps_draw;
+t_symbol *ps_frame_metadata_size;
+t_symbol *ps_frame_metadata;
+
 
 // To give back to Max
 extern t_symbol *ps_out_texture; // for our internal texture
@@ -305,6 +323,12 @@ t_jit_err jit_gl_spout_receiver_init(void)
 						  (method)0L,(method)jit_gl_spout_receiver_texturename,calcoffset(t_jit_gl_spout_receiver, texturename));		
 	jit_class_addattr(_jit_gl_spout_receiver_class,attr);	
 
+	// metadata size
+	attr = (t_jit_object*)jit_object_new(_jit_sym_jit_attr_offset, "frame_metadata_size", _jit_sym_long, attrflags,
+		(method)0L, jit_gl_spout_receiver_frame_metadatasize, calcoffset(t_jit_gl_spout_receiver, frame_metadata_size));
+	jit_class_addattr(_jit_gl_spout_receiver_class, attr);
+
+
 	//
 	// OUTPUT
 	//
@@ -329,7 +353,11 @@ t_jit_err jit_gl_spout_receiver_init(void)
 	ps_drawto = gensym("drawto");
 	ps_draw = gensym("draw");
 	
+	ps_frame_metadata_size = gensym("frame_metadata_size");
+	ps_frame_metadata = gensym("frame_metadata");
+
 	jit_class_register(_jit_gl_spout_receiver_class);
+
 
 	return JIT_ERR_NONE;
 }
@@ -353,6 +381,8 @@ t_jit_gl_spout_receiver *jit_gl_spout_receiver_new(t_symbol * dest_name)
 		x->bDestClosing    = false;
 		x->bDestChanged    = false;
 		x->bNameChanged    = false;
+
+		x->frame_metadata_size = 0;
 
 		// Create a new Spout receiver
 		x->myReceiver      = new SpoutReceiver;
@@ -694,6 +724,20 @@ t_jit_err jit_gl_spout_receiver_draw(t_jit_gl_spout_receiver *x)
 	// Is it initialized
 	if(x->bInitialized) {
 
+		// check and see if some metadata has arrived
+		if (x->myReceiver->ReadMemoryBuffer(x->g_SenderName, x->g_frameMetadata, x->frame_metadata_size) > 0) {
+
+			t_atom atomName; // to send out
+
+			atom_setsym(&atomName, gensym(x->g_frameMetadata));
+
+			// reference the max wrapper 
+			object_obex_lookup(x, gensym("maxwrapper"), (t_object**)&x->maxob);
+
+			// output the result from the max wrappers dump outlet
+			max_jit_obex_dumpout(x->maxob, ps_frame_metadata, 1, &atomName);
+		}
+
 		// Receive a shared texture and return it's width and height
 		// For MemoryShare there will be a valid texture, otherwise it will be NULL
 
@@ -941,6 +985,19 @@ t_jit_err jit_gl_spout_receiver_aspect(t_jit_gl_spout_receiver *x, void *attr, l
 
 	return JIT_ERR_NONE;
 }
+
+
+// @frame_metadata
+t_jit_err jit_gl_spout_receiver_frame_metadatasize(t_jit_gl_spout_receiver* x, void* attr, long argc, t_atom* argv)
+{
+	long c = (long)jit_atom_getlong(argv);
+	x->frame_metadata_size = c;
+
+	x->g_frameMetadata = new char[x->frame_metadata_size];
+
+	return JIT_ERR_NONE;
+}
+
 
 t_jit_err jit_gl_spout_receiver_getattr_out_name(t_jit_gl_spout_receiver *x, void *attr, long *ac, t_atom **av)
 {

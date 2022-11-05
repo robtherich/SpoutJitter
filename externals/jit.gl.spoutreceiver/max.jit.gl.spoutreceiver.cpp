@@ -21,6 +21,8 @@
 	21.06.16 - Recompiled /MT Spout 2.005 - 64bit and 32bit VS2012 - Version 2.0.5.10
 	15.01.17 - Update to Spout 2.006
 			   Vers 2.006.0
+	27.05.22 - Rebuild for Spout 2.007 VS2019 /MT - Vers 2.007h
+	27.05.22 - Added frame metadata support
 
 	----------------------------------------------------
 		
@@ -57,7 +59,8 @@
 #include "jit.common.h"
 #include "jit.gl.h"
 #include "ext_obex.h"
-#include "Spout.h"
+#include "SpoutReceiver.h"
+
 
 // Check for 64bit compile
 #ifdef _WIN64
@@ -111,9 +114,9 @@ void ext_main(void *r)
 
 	// Show the version for reference
 	#ifdef ENV64BIT
-	post("jit_gl_spout_receiver - Vers 2.0.6.0 (64 bit)");
+	post("jit.gl.spoutreceiver - Vers 2.007h (64 bit)");
 	#else
-	post("jit_gl_spout_receiver - Vers 2.0.6.0 (32 bit)");
+	post("jit.gl.spoutreceiver - Vers 2.007h (32 bit)");
 	#endif
 
 	// initialize our Jitter class
@@ -262,7 +265,7 @@ void max_jit_gl_spout_receiver_getavailablesenders(t_max_jit_gl_spout_receiver *
 {
 	int nSenders;
 	t_atom atomName; // to send out
-	string namestring; // sender name string in the list of names
+	std::string namestring; // sender name string in the list of names
 	char sendername[256]; // array to clip a passed name if > 256 bytes
 
 	SpoutReceiver * myReceiver;
@@ -276,7 +279,7 @@ void max_jit_gl_spout_receiver_getavailablesenders(t_max_jit_gl_spout_receiver *
 	    // send a clear first.
 		outlet_anything(max_jit_obex_dumpout_get(x), ps_clear, 0, 0); 
 		for(int i=0; i<nSenders; i++) {
-			myReceiver->GetSenderName(i, sendername);
+			myReceiver->GetSender(i, sendername);
 			// post("    %s", sendername);
 			// printf("    %s\n", sendername);
 			atom_setsym(&atomName, gensym((char*)sendername));
