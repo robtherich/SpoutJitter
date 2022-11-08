@@ -132,7 +132,7 @@ typedef struct _jit_gl_spoutsender
 
 	t_symbol* frame_metadata;	// Used for input of the frame metadata
 
-	int frame_metadata_size;	// frame metadata size
+	long frame_metadata_size;	// frame metadata size
 	char *g_frameMetadata; // frame metadata
 
 	bool bDestClosing;
@@ -321,6 +321,7 @@ t_jit_gl_spoutsender *jit_gl_spoutsender_new(t_symbol *dest_name)
 		x->invert        = 1; // invert texture when sending - default true
 
 		x->frame_metadata_size = 0;
+		x->g_frameMetadata = NULL;
 
 
 		x->bDestChanged  = false;
@@ -375,6 +376,8 @@ void jit_gl_spoutsender_free(t_jit_gl_spoutsender *x)
 	// Delete the sender object last.
 	if(x->mySender)delete x->mySender;
 	x->mySender = NULL;
+
+	delete[] x->g_frameMetadata;
 
 }
 
@@ -688,6 +691,7 @@ t_jit_err jit_gl_spoutsender_frame_metadatasize(t_jit_gl_spoutsender* x, void* a
 	long c = (long)jit_atom_getlong(argv);
 	x->frame_metadata_size = c;
 
+	delete[] x->g_frameMetadata;
 	x->g_frameMetadata = new char[x->frame_metadata_size];
 
 	if (x->mySender) {

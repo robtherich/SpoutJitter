@@ -135,7 +135,7 @@ typedef struct _jit_gl_spout_receiver
 
 	t_symbol* frame_metadata;	// Used for input of the frame metadata
 
-	int frame_metadata_size;	// frame metadata size
+	long frame_metadata_size;	// frame metadata size
 	char *g_frameMetadata;		// frame metadata
 
 	bool         bInitialized;
@@ -383,6 +383,7 @@ t_jit_gl_spout_receiver *jit_gl_spout_receiver_new(t_symbol * dest_name)
 		x->bNameChanged    = false;
 
 		x->frame_metadata_size = 0;
+		x->g_frameMetadata = NULL;
 
 		// Create a new Spout receiver
 		x->myReceiver      = new SpoutReceiver;
@@ -454,6 +455,7 @@ void jit_gl_spout_receiver_free(t_jit_gl_spout_receiver *x)
 		jit_object_free(x->ext_tex);
 	x->ext_tex = NULL;
 
+	delete[] x->g_frameMetadata;
 }
 
 t_jit_err jit_gl_spout_receiver_dest_closing(t_jit_gl_spout_receiver *x)
@@ -993,6 +995,7 @@ t_jit_err jit_gl_spout_receiver_frame_metadatasize(t_jit_gl_spout_receiver* x, v
 	long c = (long)jit_atom_getlong(argv);
 	x->frame_metadata_size = c;
 
+	delete[] x->g_frameMetadata;
 	x->g_frameMetadata = new char[x->frame_metadata_size];
 
 	return JIT_ERR_NONE;
