@@ -681,7 +681,7 @@ t_jit_err jit_gl_spout_receiver_draw(t_jit_gl_spout_receiver *x)
 		// Set memoryshare mode if the user requested it
 		// Needs a local texture to receive the memoryshare result
 		// if(x->memoryshare == 1) x->myReceiver->SetMemoryShareMode(true);
-
+		x->myReceiver->SetReceiverName(x->g_SenderName);
 		if(x->myReceiver->CreateReceiver(x->g_SenderName, senderWidth, senderHeight)) {
 
 			x->g_Width	= senderWidth;

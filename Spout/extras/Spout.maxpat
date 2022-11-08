@@ -67,7 +67,7 @@
 						}
 ,
 						"classnamespace" : "box",
-						"rect" : [ 467.0, 400.0, 720.0, 415.0 ],
+						"rect" : [ 462.0, 586.0, 720.0, 415.0 ],
 						"bglocked" : 0,
 						"openinpresentation" : 0,
 						"default_fontsize" : 12.0,
@@ -180,8 +180,8 @@
 									"numinlets" : 1,
 									"numoutlets" : 1,
 									"outlettype" : [ "" ],
-									"patching_rect" : [ 313.0, 106.181824000000006, 121.0, 22.0 ],
-									"text" : "prepend servername"
+									"patching_rect" : [ 313.0, 106.181824000000006, 123.0, 22.0 ],
+									"text" : "prepend sendername"
 								}
 
 							}
@@ -1142,11 +1142,24 @@
 				}
 
 			}
+, 			{
+				"box" : 				{
+					"attr" : "sendername",
+					"id" : "obj-2",
+					"maxclass" : "attrui",
+					"numinlets" : 1,
+					"numoutlets" : 1,
+					"outlettype" : [ "" ],
+					"parameter_enable" : 0,
+					"patching_rect" : [ 637.0, 185.0, 202.0, 22.0 ]
+				}
+
+			}
  ],
 		"lines" : [ 			{
 				"patchline" : 				{
 					"destination" : [ "obj-24", 1 ],
-					"midpoints" : [ 817.0, 315.0, 883.25, 315.0, 883.25, 242.0, 860.5, 242.0 ],
+					"midpoints" : [ 817.0, 332.0, 893.25, 332.0, 893.25, 242.0, 860.5, 242.0 ],
 					"source" : [ "obj-11", 1 ]
 				}
 
@@ -1155,6 +1168,13 @@
 				"patchline" : 				{
 					"destination" : [ "obj-39", 0 ],
 					"source" : [ "obj-18", 0 ]
+				}
+
+			}
+, 			{
+				"patchline" : 				{
+					"destination" : [ "obj-39", 0 ],
+					"source" : [ "obj-2", 0 ]
 				}
 
 			}
@@ -1292,7 +1312,7 @@
 		"dependency_cache" : [ 			{
 				"name" : "ameba.genjit",
 				"bootpath" : "~/AppData/Roaming/Cycling '74/Max 8/examples/jitter-examples/gen",
-				"patcherrelativepath" : "../../../../../AppData/Roaming/Cycling '74/Max 8/examples/jitter-examples/gen",
+				"patcherrelativepath" : "../../../../../../AppData/Roaming/Cycling '74/Max 8/examples/jitter-examples/gen",
 				"type" : "gJIT",
 				"implicit" : 1
 			}
@@ -1323,7 +1343,7 @@
 , 			{
 				"name" : "rgb2luma.genjit",
 				"bootpath" : "~/AppData/Roaming/Cycling '74/Max 8/examples/jitter-examples/gen",
-				"patcherrelativepath" : "../../../../../AppData/Roaming/Cycling '74/Max 8/examples/jitter-examples/gen",
+				"patcherrelativepath" : "../../../../../../AppData/Roaming/Cycling '74/Max 8/examples/jitter-examples/gen",
 				"type" : "gJIT",
 				"implicit" : 1
 			}
