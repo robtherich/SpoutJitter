@@ -497,11 +497,13 @@ t_jit_err jit_gl_spout_receiver_dest_changed(t_jit_gl_spout_receiver *x)
 		// t_jit_gl_context ctx = jit_gl_get_context();
 		t_symbol *context = jit_attr_getsym(x, ps_drawto);
 		jit_attr_setsym(x->output, ps_drawto, context);
-		t_jit_gl_drawinfo drawInfo;
-		t_symbol *texName = jit_attr_getsym(x->output, gensym("name"));
-		jit_gl_drawinfo_setup(x, &drawInfo);
-		jit_gl_bindtexture(&drawInfo, texName, 0);
-		jit_gl_unbindtexture(&drawInfo, texName, 0);
+		if (!x->bIsGL3) {
+			t_jit_gl_drawinfo drawInfo;
+			t_symbol* texName = jit_attr_getsym(x->output, gensym("name"));
+			jit_gl_drawinfo_setup(x, &drawInfo);
+			jit_gl_bindtexture(&drawInfo, texName, 0);
+			jit_gl_unbindtexture(&drawInfo, texName, 0);
+		}
 	}
 
 	x->bDestChanged = true;

@@ -1,0 +1,27 @@
+From 0970cb20867906f4376b52ea6b193bd30eb65ac4 Mon Sep 17 00:00:00 2001
+From: Rob Ramirez <robr@cycling74.com>
+Date: Fri, 18 Nov 2022 16:54:30 -0500
+Subject: [PATCH] causes error with core profile contexts
+
+---
+ SPOUTSDK/SpoutGL/SpoutGLextensions.cpp | 4 +++-
+ 1 file changed, 3 insertions(+), 1 deletion(-)
+
+diff --git a/SPOUTSDK/SpoutGL/SpoutGLextensions.cpp b/SPOUTSDK/SpoutGL/SpoutGLextensions.cpp
+index 4c5e2a0..73d27b7 100644
+--- a/SPOUTSDK/SpoutGL/SpoutGLextensions.cpp
++++ b/SPOUTSDK/SpoutGL/SpoutGLextensions.cpp
+@@ -523,7 +523,9 @@ unsigned int loadGLextensions() {
+ 	// various compilers, operating systems and environments.
+ 	// De-activate this function if you have problems.
+ 	// 
+-	if (isExtensionSupported("GL_EXT_bgra")) {
++	
++	//if (isExtensionSupported("GL_EXT_bgra")) 
++	{
+ 		caps |= GLEXT_SUPPORT_BGRA;
+ 	}
+ #endif
+-- 
+2.36.0.windows.1
+

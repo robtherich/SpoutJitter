@@ -306,7 +306,8 @@ t_jit_gl_spoutsender *jit_gl_spoutsender_new(t_symbol *dest_name)
 
 	// make jit object
 	if ((x = (t_jit_gl_spoutsender *)jit_object_alloc(_jit_gl_spoutsender_class)))	{
-		
+		x->bIsGL3 = (preferences_getsym("glengine") == gensym("gl3"));
+
 		// create and attach ob3d
 		jit_ob3d_new(x, dest_name);
 
@@ -341,7 +342,9 @@ t_jit_gl_spoutsender *jit_gl_spoutsender_new(t_symbol *dest_name)
 			jit_attr_setsym(x->texture, _jit_sym_name, name);
 			jit_attr_setsym(x->texture, gensym("defaultimage"), gensym("white"));
 			jit_attr_setlong(x->texture, gensym("rectangle"), 1);
-			jit_attr_setsym(x->texture, gensym("mode"), gensym("dynamic"));	
+			if (!x->bIsGL3) {
+				jit_attr_setsym(x->texture, gensym("mode"), gensym("dynamic"));
+			}
 			jit_attr_setlong(x->texture, gensym("flip"), 0); // Not used but could be
 			jit_attr_setsym(x, ps_texture, name);
 			x->textureSource = name; // initialization of jitter texture
@@ -350,7 +353,7 @@ t_jit_gl_spoutsender *jit_gl_spoutsender_new(t_symbol *dest_name)
 			jit_object_error((t_object *)x,"jit.gl.spoutsender: could not create texture");
 			x->textureSource = _jit_sym_nothing;		
 		}
-		x->bIsGL3 = (preferences_getsym("glengine") == gensym("gl3"));
+		
 	} 
 	else {
 		x = NULL;
