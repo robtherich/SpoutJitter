@@ -334,6 +334,8 @@ t_jit_gl_spoutsender *jit_gl_spoutsender_new(t_symbol *dest_name)
 		x->sendername = jit_symbol_unique();
 		jit_attr_setsym(x, gensym("sendername"), x->sendername);
 
+        jit_attr_setlong(x, gensym("layer"), JIT_GL_LAYER_LAST + 1);
+
 		// instantiate a single internal jit.gl.texture for matrix input
 		x->texture = (t_symbol *)jit_object_new(ps_jit_gl_texture, jit_attr_getsym(x, ps_drawto) );
 		if (x->texture)	{
