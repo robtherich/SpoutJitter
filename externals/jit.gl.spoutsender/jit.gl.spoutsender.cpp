@@ -545,9 +545,6 @@ t_jit_err jit_gl_spoutsender_draw(t_jit_gl_spoutsender *x)
 				else if (textype == _jit_sym_float32 || textype == gensym("float")) {
 					format = DXGI_FORMAT_R32G32B32A32_FLOAT;
 				}
-				else {
-					x->mySender->SetDX9(true);
-				}
 					
 				if(x->mySender->CreateSender(x->g_SenderName, texWidth, texHeight, format)) {
 					x->g_texId	= texId;
