@@ -56,7 +56,7 @@ set(SpoutLink
     Version
 )
 
-add_definitions(-DUNDEF_USE_FBO_EXTENSIONS -DlegacyOpenGL)
+add_definitions(-DUNDEF_USE_FBO_EXTENSIONS)
 add_subdirectory("externals/jit.gl.spoutreceiver")
 add_subdirectory("externals/jit.gl.spoutsender")
 

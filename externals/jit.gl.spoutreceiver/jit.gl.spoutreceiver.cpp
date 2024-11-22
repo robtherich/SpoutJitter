@@ -418,6 +418,10 @@ t_jit_gl_spout_receiver *jit_gl_spout_receiver_new(t_symbol * dest_name)
 		jit_ob3d_new(x, dest_name);
 
 		x->bIsGL3 = (preferences_getsym("glengine") == gensym("gl3"));
+        if (!x->bIsGL3) {
+            jit_object_error((t_object*)x, "Spout requires the glcore engine");
+            jit_object_post((t_object*)x, "For legacy OpenGL support downgrade the Spout package to version 2.0.75");
+        }
 		x->geometry = NULL;
 		x->ext_tex = NULL;
 
@@ -554,7 +558,7 @@ void jit_gl_spout_receiver_drawgl2(t_jit_gl_spout_receiver *x, GLuint texname)
 		}
 		else {
 			// Otherwise draw the shared texture straight into it
-			x->myReceiver->DrawSharedTexture();
+			//x->myReceiver->DrawSharedTexture();
 		}
 	}
 
@@ -593,7 +597,7 @@ void jit_gl_spout_receiver_draw_gl3(t_jit_gl_spout_receiver *x)
 {
 	void *state = jit_ob3d_state_get((t_jit_object*)x);
 	if (!x->geometry) {
-		x->geometry = jit_gl_fs_quad_getgeometry(1);
+		x->geometry = jit_gl_fs_quad_getgeometry(0);
 	}
 	if (!x->ext_tex) {
 		x->ext_tex = new_external_texture(x);

@@ -355,6 +355,11 @@ t_jit_gl_spoutsender *jit_gl_spoutsender_new(t_symbol *dest_name)
 			jit_object_error((t_object *)x,"jit.gl.spoutsender: could not create texture");
 			x->textureSource = _jit_sym_nothing;		
 		}
+
+        if (!x->bIsGL3) {
+            jit_object_error((t_object*)x, "Spout requires the glcore engine");
+            jit_object_post((t_object*)x, "For legacy OpenGL support downgrade the Spout package to version 2.0.75");
+        }
 		
 	} 
 	else {
