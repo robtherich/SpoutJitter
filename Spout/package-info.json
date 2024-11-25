@@ -1,7 +1,7 @@
 {
 	"name" : "Spout",
 	"displayname" : "",
-	"version" : "2.0.73",
+	"version" : "2.0.76",
 	"author" : "Lynn Jarvis, Bob Jarvis",
 	"authors" : [  ],
 	"description" : "Jitter externals for sending OpenGL textures with Spout enabled applications. Windows only, for similar functionality on Mac, check out the Syphon package.",
@@ -18,18 +18,16 @@
 		}
 ,
 		"windows" : 		{
-			"min_version" : "7",
+			"min_version" : "10",
 			"platform" : [ "x64" ]
 		}
 
 	}
 ,
-	"homepatcher" : null,
+	"homepatcher" : "Spout.maxpat",
 	"filelist" : 	{
 		"externals" : [ "jit.gl.spoutreceiver.mxe64", "jit.gl.spoutsender.mxe64" ],
-		"help" : [ "jit.gl.spoutreceiver.maxhelp", "jit.gl.spoutsender.maxhelp", "maxLogo.png", "SpoutLogo.png" ]
+		"help" : [ "jit.gl.spoutreceiver.maxhelp", "jit.gl.spoutsender.maxhelp", "maxLogo.png", "SpoutLogo.png" ],
+		"extras" : [ "Spout.maxpat" ]
 	}
-,
-	"c74install" : 1,
-	"installdate" : 3741606023
 }
